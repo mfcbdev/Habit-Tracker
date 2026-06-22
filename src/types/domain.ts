@@ -4,15 +4,15 @@ export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Habit = Database['public']['Tables']['habits']['Row'];
 export type HabitCompletion = Database['public']['Tables']['habit_completions']['Row'];
 export type HabitStreak = Database['public']['Tables']['habit_streaks']['Row'];
-export type Level = Database['public']['Tables']['levels']['Row'];
-export type XpLedgerEntry = Database['public']['Tables']['xp_ledger']['Row'];
+export type Rank = Database['public']['Tables']['ranks']['Row'];
+export type HabitPointsLedgerEntry = Database['public']['Tables']['habit_points_ledger']['Row'];
 export type Badge = Database['public']['Tables']['badges']['Row'];
 export type UserBadge = Database['public']['Tables']['user_badges']['Row'];
 export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row'];
 export type NotificationLogEntry = Database['public']['Tables']['notification_log']['Row'];
 
 export type HabitCompletionRate = Database['public']['Views']['habit_completion_rates']['Row'];
-export type WeeklyXpSummary = Database['public']['Views']['weekly_xp_summary']['Row'];
+export type WeeklyHpSummary = Database['public']['Views']['weekly_hp_summary']['Row'];
 export type WeeklyLeaderboardRow = Database['public']['Views']['weekly_leaderboard']['Row'];
 
 export interface HabitWithStreak extends Habit {
@@ -27,8 +27,8 @@ export interface HabitInstance {
   completion: HabitCompletion | null;
 }
 
-export interface ProfileWithLevel extends Profile {
-  levelInfo: Level;
+export interface ProfileWithRank extends Profile {
+  rankInfo: Rank;
 }
 
 export interface BadgeWithStatus extends Badge {
@@ -36,11 +36,11 @@ export interface BadgeWithStatus extends Badge {
 }
 
 export interface GamificationSnapshot {
-  profile: ProfileWithLevel | null;
+  profile: ProfileWithRank | null;
   streaks: HabitStreak[];
   badges: BadgeWithStatus[];
   leaderboard: WeeklyLeaderboardRow | null;
-  weeklyXp: WeeklyXpSummary[];
+  weeklyHp: WeeklyHpSummary[];
   isLoading: boolean;
 }
 

@@ -2,6 +2,10 @@
 // project exists, this can be regenerated with:
 //   npx supabase gen types typescript --project-id <ref> > src/types/database.ts
 // Keep the same `Database` shape so the rest of the app doesn't need to change.
+//
+// Note: @supabase/postgrest-js requires every table/view to carry a
+// `Relationships` array (even if empty) and the schema to carry a `Functions`
+// map, or its generic inference silently falls back to `never` everywhere.
 
 export type HabitFrequency = 'daily' | 'weekly';
 export type HabitDifficulty = 'easy' | 'medium' | 'hard';
@@ -19,8 +23,8 @@ export interface Database {
           display_name: string | null;
           avatar_url: string | null;
           timezone: string;
-          total_xp: number;
-          current_level: number;
+          habit_points: number;
+          current_rank: number;
           daily_summary_enabled: boolean;
           daily_summary_time: string;
           created_at: string;
@@ -32,14 +36,15 @@ export interface Database {
           display_name?: string | null;
           avatar_url?: string | null;
           timezone?: string;
-          total_xp?: number;
-          current_level?: number;
+          habit_points?: number;
+          current_rank?: number;
           daily_summary_enabled?: boolean;
           daily_summary_time?: string;
           created_at?: string;
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['profiles']['Insert']>;
+        Relationships: [];
       };
       habits: {
         Row: {
@@ -79,6 +84,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: Partial<Database['public']['Tables']['habits']['Insert']>;
+        Relationships: [];
       };
       habit_completions: {
         Row: {
@@ -87,7 +93,7 @@ export interface Database {
           user_id: string;
           completed_date: string;
           completed_at: string;
-          xp_earned: number;
+          hp_earned: number;
           created_at: string;
         };
         Insert: {
@@ -98,11 +104,12 @@ export interface Database {
           completed_at?: string;
           // Server-overwritten by the t2_habit_completions_award_xp trigger;
           // clients should never set this themselves.
-          xp_earned?: number;
+          hp_earned?: number;
           created_at?: string;
         };
         // No update policy exists in the DB — completions are insert/delete only.
         Update: never;
+        Relationships: [];
       };
       habit_streaks: {
         Row: {
@@ -116,18 +123,23 @@ export interface Database {
         // Read-only to clients: only written by recalculate_habit_streak().
         Insert: never;
         Update: never;
+        Relationships: [];
       };
-      levels: {
+      ranks: {
         Row: {
-          level: number;
-          min_xp: number;
-          max_xp: number | null;
-          title: string;
+          rank_order: number;
+          tier: string;
+          division: number | null;
+          display_name: string;
+          min_hp: number;
+          max_hp: number | null;
+          color: string;
         };
         Insert: never;
         Update: never;
+        Relationships: [];
       };
-      xp_ledger: {
+      habit_points_ledger: {
         Row: {
           id: string;
           user_id: string;
@@ -136,9 +148,10 @@ export interface Database {
           reason: XpLedgerReason;
           created_at: string;
         };
-        // Read-only to clients: only written by the XP award/revert triggers.
+        // Read-only to clients: only written by the HP award/revert triggers.
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       badges: {
         Row: {
@@ -152,6 +165,7 @@ export interface Database {
         };
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       user_badges: {
         Row: {
@@ -163,6 +177,7 @@ export interface Database {
         // Read-only to clients: only written by check_and_award_badges().
         Insert: never;
         Update: never;
+        Relationships: [];
       };
       push_subscriptions: {
         Row: {
@@ -184,6 +199,7 @@ export interface Database {
           created_at?: string;
         };
         Update: Partial<Database['public']['Tables']['push_subscriptions']['Insert']>;
+        Relationships: [];
       };
       notification_log: {
         Row: {
@@ -197,6 +213,7 @@ export interface Database {
         // Written only by the Edge Function via the service-role key.
         Insert: never;
         Update: never;
+        Relationships: [];
       };
     };
     Views: {
@@ -210,23 +227,27 @@ export interface Database {
           completions_30d: number;
           rough_weekly_rate: number;
         };
+        Relationships: [];
       };
-      weekly_xp_summary: {
+      weekly_hp_summary: {
         Row: {
           user_id: string;
           week_start: string;
-          xp_total: number;
+          hp_total: number;
         };
+        Relationships: [];
       };
       weekly_leaderboard: {
         Row: {
           user_id: string;
-          current_week_xp: number;
-          last_week_xp: number;
-          xp_delta: number;
+          current_week_hp: number;
+          last_week_hp: number;
+          hp_delta: number;
         };
+        Relationships: [];
       };
     };
+    Functions: Record<string, never>;
     Enums: {
       habit_frequency: HabitFrequency;
       habit_difficulty: HabitDifficulty;

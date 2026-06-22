@@ -13,7 +13,7 @@ export const WEEKDAY_LABELS: Record<DayOfWeek, string> = {
   6: 'Sat',
 };
 
-export const DIFFICULTY_XP: Record<HabitDifficulty, number> = {
+export const DIFFICULTY_HP: Record<HabitDifficulty, number> = {
   easy: 10,
   medium: 25,
   hard: 50,

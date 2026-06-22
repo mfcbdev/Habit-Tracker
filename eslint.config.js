@@ -38,6 +38,6 @@ export default [
     },
   },
   {
-    ignores: ['dist', 'dev-dist', 'node_modules'],
+    ignores: ['dist', 'dev-dist', 'node_modules', 'vite.config.js', 'vite.config.d.ts', '*.tsbuildinfo'],
   },
 ];
