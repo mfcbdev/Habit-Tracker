@@ -46,6 +46,8 @@ export default [
     },
   },
   {
-    ignores: ['dist', 'dev-dist', 'node_modules', 'vite.config.js', 'vite.config.d.ts', '*.tsbuildinfo'],
+    // Deno Edge Functions are a separate runtime/toolchain (Deno has its own
+    // built-in linter), not part of this Vite/Node app's ESLint setup.
+    ignores: ['dist', 'dev-dist', 'node_modules', 'vite.config.js', 'vite.config.d.ts', '*.tsbuildinfo', 'supabase/functions/**'],
   },
 ];

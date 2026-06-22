@@ -1,0 +1,49 @@
+{
+  "version": "5",
+  "redirects": {
+    "https://esm.sh/@types/web-push@~3.6.4/index.d.ts": "https://esm.sh/@types/web-push@3.6.4/index.d.ts"
+  },
+  "remote": {
+    "https://esm.sh/@supabase/supabase-js@2.45.0": "36ae57c3f2dc3f94fd122a846b40a87114d29bb2f47e910cb46bee5575febf2e",
+    "https://esm.sh/web-push@3.6.7": "e3c6dacc6581629be7433797d5fe1f756ad12d3f8732f97c9b71129affd90906"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@eslint/js@^9.12.0",
+        "npm:@supabase/supabase-js@^2.45.0",
+        "npm:@tanstack/react-query@^5.59.0",
+        "npm:@testing-library/react@^16.0.1",
+        "npm:@types/canvas-confetti@^1.6.4",
+        "npm:@types/node@^22.7.5",
+        "npm:@types/react-dom@^18.3.0",
+        "npm:@types/react@^18.3.11",
+        "npm:@typescript-eslint/eslint-plugin@^8.8.1",
+        "npm:@typescript-eslint/parser@^8.8.1",
+        "npm:@vitejs/plugin-react@^4.3.2",
+        "npm:autoprefixer@^10.4.20",
+        "npm:canvas-confetti@^1.9.3",
+        "npm:clsx@^2.1.1",
+        "npm:date-fns-tz@^3.2.0",
+        "npm:date-fns@^3.6.0",
+        "npm:eslint-plugin-react-hooks@5",
+        "npm:eslint-plugin-react-refresh@~0.4.12",
+        "npm:eslint@^9.12.0",
+        "npm:globals@^15.10.0",
+        "npm:lucide-react@0.451",
+        "npm:postcss@^8.4.47",
+        "npm:react-dom@^18.3.1",
+        "npm:react-router-dom@^6.27.0",
+        "npm:react@^18.3.1",
+        "npm:recharts@^2.13.0",
+        "npm:tailwindcss@^3.4.13",
+        "npm:typescript@^5.6.3",
+        "npm:vite-plugin-pwa@~0.20.5",
+        "npm:vite@^5.4.8",
+        "npm:vitest@^2.1.2",
+        "npm:workbox-core@^7.1.0",
+        "npm:workbox-precaching@^7.1.0"
+      ]
+    }
+  }
+}
