@@ -1,27 +1,19 @@
 import { TrendingUp, TrendingDown } from 'lucide-react';
-import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
-import { useRanks, useCompletionRates, useWeeklyHpSummary } from '@/hooks/useStats';
-import { useBadgeCatalog, useEarnedBadges, mergeBadgeStatus } from '@/hooks/useBadges';
-import { useLeaderboard } from '@/hooks/useLeaderboard';
-import { useHabitStreaks } from '@/hooks/useHabitStreaks';
+import { useGamification } from '@/hooks/useGamification';
+import { useCompletionRates, useWeeklyHpSummary, useRanks } from '@/hooks/useStats';
 import { RankProgress } from '@/components/profile/RankProgress';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { WeeklyHpChart, WeakestHabitsChart } from '@/components/profile/StatsChart';
 
 export default function ProfilePage() {
   const { signOut } = useAuth();
-  const { data: profile } = useProfile();
-  const { data: ranks } = useRanks();
+  const { profile, badges, leaderboard, streaks } = useGamification();
   const { data: completionRates } = useCompletionRates();
   const { data: weeklyHp } = useWeeklyHpSummary();
-  const { data: badgeCatalog } = useBadgeCatalog();
-  const { data: earnedBadges } = useEarnedBadges();
-  const { data: leaderboard } = useLeaderboard();
-  const { data: streaks } = useHabitStreaks();
+  const { data: ranks } = useRanks();
 
-  const longestStreak = streaks?.reduce((max, s) => Math.max(max, s.longest_streak), 0) ?? 0;
-  const badges = badgeCatalog && earnedBadges ? mergeBadgeStatus(badgeCatalog, earnedBadges) : [];
+  const longestStreak = streaks.reduce((max, s) => Math.max(max, s.longest_streak), 0);
 
   return (
     <div className="space-y-6 px-4 pt-6">
