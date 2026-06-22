@@ -5,6 +5,7 @@ import { useCompletionRates, useWeeklyHpSummary, useRanks } from '@/hooks/useSta
 import { RankProgress } from '@/components/profile/RankProgress';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { WeeklyHpChart, WeakestHabitsChart } from '@/components/profile/StatsChart';
+import { NotificationSettings } from '@/components/profile/NotificationSettings';
 
 export default function ProfilePage() {
   const { signOut } = useAuth();
@@ -62,6 +63,11 @@ export default function ProfilePage() {
       <section>
         <h2 className="mb-2 text-sm font-medium text-slate-400">Weakest habits (7d)</h2>
         {completionRates && <WeakestHabitsChart data={completionRates} />}
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-medium text-slate-400">Notifications</h2>
+        <NotificationSettings />
       </section>
     </div>
   );

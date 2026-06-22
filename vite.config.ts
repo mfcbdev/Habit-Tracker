@@ -21,7 +21,7 @@ export default defineConfig({
       manifest: {
         name: 'Habit Tracker',
         short_name: 'Habits',
-        description: 'Mobile-first habit tracking with streaks, XP and badges',
+        description: 'Mobile-first habit tracking with streaks, habit points and ranks',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

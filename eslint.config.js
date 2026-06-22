@@ -38,6 +38,14 @@ export default [
     },
   },
   {
+    files: ['src/sw.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.serviceworker,
+      },
+    },
+  },
+  {
     ignores: ['dist', 'dev-dist', 'node_modules', 'vite.config.js', 'vite.config.d.ts', '*.tsbuildinfo'],
   },
 ];
