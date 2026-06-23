@@ -25,16 +25,19 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-slate-100">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-        <h1 className="text-2xl font-semibold">Create your account</h1>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-bg px-6 text-primary">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-5">
+        <header className="mb-2">
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted">Start a new habit</p>
+          <h1 className="font-serif-display text-[34px] leading-tight text-primary">Create your account.</h1>
+        </header>
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full rounded-lg border border-surface-border bg-surface-raised px-4 py-3"
+          className="w-full rounded-input border border-DEFAULT bg-surface px-4 py-3 text-primary placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
         <input
           type="password"
@@ -43,18 +46,21 @@ export default function SignupPage() {
           onChange={(e) => setPassword(e.target.value)}
           required
           minLength={6}
-          className="w-full rounded-lg border border-surface-border bg-surface-raised px-4 py-3"
+          className="w-full rounded-input border border-DEFAULT bg-surface px-4 py-3 text-primary placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
         />
-        {error && <p className="text-sm text-red-400">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full rounded-lg bg-indigo-500 py-3 font-medium disabled:opacity-50"
+          className="w-full rounded-pill bg-accent py-3.5 font-semibold text-accent-contrast shadow-card transition active:scale-[0.98] disabled:opacity-50"
         >
           Sign up
         </button>
-        <p className="text-center text-sm text-slate-400">
-          Already have an account? <Link to="/login" className="text-indigo-400">Sign in</Link>
+        <p className="text-center text-sm text-muted">
+          Already have an account?{' '}
+          <Link to="/login" className="text-accent underline-offset-4 hover:underline">
+            Sign in
+          </Link>
         </p>
       </form>
     </div>

@@ -2,7 +2,7 @@ import { getIcon } from '@/lib/icons';
 import { formatTimeRange } from '@/lib/utils';
 import type { TimeBlockEvent } from '@/types';
 
-const HOUR_HEIGHT = 56; // px per hour, matches Timeline gridlines
+const HOUR_HEIGHT = 64;
 
 interface TimeBlockProps {
   event: TimeBlockEvent;
@@ -12,23 +12,31 @@ interface TimeBlockProps {
 export function TimeBlock({ event, onClick }: TimeBlockProps) {
   const Icon = getIcon(event.habit.icon);
   const top = (event.startMinutes / 60) * HOUR_HEIGHT;
-  const height = Math.max(((event.endMinutes - event.startMinutes) / 60) * HOUR_HEIGHT, 28);
+  const height = Math.max(((event.endMinutes - event.startMinutes) / 60) * HOUR_HEIGHT, 36);
 
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="absolute left-14 right-2 overflow-hidden rounded-lg border px-2 py-1 text-left text-xs"
-      style={{
-        top,
-        height,
-        backgroundColor: `${event.habit.color}26`,
-        borderColor: event.habit.color,
-      }}
+      className="absolute left-16 right-3 overflow-hidden rounded-card bg-surface text-left shadow-card transition-shadow hover:shadow-floating"
+      style={{ top, height }}
     >
-      <span className="flex items-center gap-1 font-medium" style={{ color: event.habit.color }}>
-        <Icon size={12} /> {event.habit.name}
-      </span>
-      <span className="text-slate-400">{formatTimeRange(event.habit.time_start, event.habit.time_end)}</span>
+      <span
+        className="absolute inset-y-0 left-0 w-1 rounded-l-card"
+        style={{ backgroundColor: event.habit.color }}
+        aria-hidden
+      />
+      <div className="flex h-full flex-col justify-center pl-4 pr-3">
+        <span className="flex items-center gap-1.5 text-[14px] font-semibold text-primary">
+          <Icon className="h-3.5 w-3.5" style={{ color: event.habit.color }} />
+          {event.habit.name}
+        </span>
+        {height > 44 && (
+          <span className="text-[11px] text-muted">
+            {formatTimeRange(event.habit.time_start, event.habit.time_end)}
+          </span>
+        )}
+      </div>
     </button>
   );
 }

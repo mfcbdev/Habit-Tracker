@@ -1,55 +1,119 @@
+import { useMemo, useState } from 'react';
+import { format, parseISO } from 'date-fns';
+import { AnimatePresence } from 'framer-motion';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useHabitStreaks } from '@/hooks/useHabitStreaks';
-import { HabitCard } from '@/components/habit/HabitCard';
+import { useProfile } from '@/hooks/useProfile';
+import { useWeekStatus } from '@/hooks/useWeekStatus';
+import { getTodayInTimezone, toMinutes } from '@/lib/utils';
+import { LargeTitle } from '@/components/ui/LargeTitle';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { WeekStrip } from '@/components/habit/WeekStrip';
+import { HabitCapsuleCard } from '@/components/habit/HabitCapsuleCard';
+import type { HabitInstance } from '@/types';
+
+type Filter = 'todos' | 'completed';
+
+interface Bucket {
+  key: string;
+  label: string;
+  instances: HabitInstance[];
+}
+
+function bucketOf(startTime: string): { key: string; label: string; order: number } {
+  const m = toMinutes(startTime);
+  if (m < 12 * 60) return { key: 'morning', label: 'Morning', order: 0 };
+  if (m < 18 * 60) return { key: 'afternoon', label: 'Afternoon', order: 1 };
+  return { key: 'evening', label: 'Evening', order: 2 };
+}
 
 export default function TodayPage() {
-  const { data: instances, isLoading, toggleComplete } = useTodayHabits();
+  const [filter, setFilter] = useState<Filter>('todos');
+  const { data: profile } = useProfile();
+  const timezone = profile?.timezone ?? 'UTC';
+  const today = getTodayInTimezone(timezone);
+  const { data: instances = [], isLoading, toggleComplete } = useTodayHabits();
   const { data: streaks } = useHabitStreaks();
+  const { data: weekStatus = {} } = useWeekStatus();
 
-  const pending = instances?.filter((i) => !i.isCompleted) ?? [];
-  const done = instances?.filter((i) => i.isCompleted) ?? [];
+  const filtered = useMemo(
+    () => instances.filter((i) => (filter === 'todos' ? !i.isCompleted : i.isCompleted)),
+    [instances, filter],
+  );
 
-  function streakFor(habitId: string) {
-    return streaks?.find((s) => s.habit_id === habitId)?.current_streak;
+  const buckets = useMemo<Bucket[]>(() => {
+    const map = new Map<string, Bucket & { order: number }>();
+    for (const inst of filtered) {
+      const b = bucketOf(inst.habit.time_start);
+      const existing = map.get(b.key);
+      if (existing) existing.instances.push(inst);
+      else map.set(b.key, { ...b, instances: [inst] });
+    }
+    return Array.from(map.values()).sort((a, b) => a.order - b.order);
+  }, [filtered]);
+
+  function streakFor(id: string) {
+    return streaks?.find((s) => s.habit_id === id)?.current_streak;
   }
 
+  const remaining = instances.filter((i) => !i.isCompleted).length;
+  const dateLabel = format(parseISO(today), 'EEEE, MMM d');
+
   return (
-    <div className="px-4 pt-6">
-      <h1 className="text-xl font-semibold">Today</h1>
+    <div className="pt-4">
+      <LargeTitle
+        title={`Today, ${dateLabel.split(', ')[1]}`}
+        subtitle={
+          isLoading
+            ? 'Loading…'
+            : remaining === 0
+              ? 'All habits done · enjoy your day'
+              : `${remaining} habit${remaining === 1 ? '' : 's'} left`
+        }
+      />
 
-      {isLoading && <p className="mt-4 text-slate-400">Loading…</p>}
+      <div className="mt-1 mb-5">
+        <WeekStrip today={today} statuses={weekStatus} />
+      </div>
 
-      {!isLoading && instances?.length === 0 && (
-        <p className="mt-4 text-slate-400">Nothing scheduled today. Add a habit to get started.</p>
-      )}
+      <div className="flex justify-center px-5">
+        <SegmentedControl<Filter>
+          options={[
+            { value: 'todos', label: 'To-dos' },
+            { value: 'completed', label: 'Completed' },
+          ]}
+          value={filter}
+          onChange={setFilter}
+        />
+      </div>
 
-      {pending.length > 0 && (
-        <section className="mt-4 space-y-2">
-          <h2 className="text-sm font-medium text-slate-400">Pending ({pending.length})</h2>
-          {pending.map((instance) => (
-            <HabitCard
-              key={instance.habit.id}
-              instance={instance}
-              streak={streakFor(instance.habit.id)}
-              onToggle={() => toggleComplete(instance)}
-            />
+      <div className="mt-6 space-y-7 px-5">
+        {!isLoading && filtered.length === 0 && (
+          <p className="text-center text-sm text-muted">
+            {filter === 'todos' ? 'All done. Nice work.' : 'Nothing completed yet today.'}
+          </p>
+        )}
+
+        <AnimatePresence mode="popLayout">
+          {buckets.map((bucket) => (
+            <section key={bucket.key} className="space-y-2.5">
+              <h2 className="font-serif-display text-[15px] text-secondary">
+                {bucket.label} <span className="text-muted">({bucket.instances.length})</span>
+              </h2>
+              <div className="space-y-2.5">
+                {bucket.instances.map((instance) => (
+                  <HabitCapsuleCard
+                    key={instance.habit.id}
+                    instance={instance}
+                    streak={streakFor(instance.habit.id)}
+                    onToggle={() => toggleComplete(instance)}
+                  />
+                ))}
+              </div>
+            </section>
           ))}
-        </section>
-      )}
-
-      {done.length > 0 && (
-        <section className="mt-6 space-y-2">
-          <h2 className="text-sm font-medium text-slate-400">Done ({done.length})</h2>
-          {done.map((instance) => (
-            <HabitCard
-              key={instance.habit.id}
-              instance={instance}
-              streak={streakFor(instance.habit.id)}
-              onToggle={() => toggleComplete(instance)}
-            />
-          ))}
-        </section>
-      )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

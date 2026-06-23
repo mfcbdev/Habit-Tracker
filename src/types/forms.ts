@@ -3,6 +3,7 @@ import type { HabitDifficulty, HabitFrequency } from './database';
 export interface HabitFormValues {
   name: string;
   description: string;
+  purpose: string;
   category: string;
   color: string;
   icon: string;

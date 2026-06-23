@@ -1,61 +1,66 @@
 import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useHabits } from '@/hooks/useHabits';
-import { HabitForm } from '@/components/habit/HabitForm';
-import { HabitListItem } from '@/components/habit/HabitListItem';
-import type { Habit } from '@/types';
+import { useHabitStreaks } from '@/hooks/useHabitStreaks';
+import { useHabitSheets } from '@/hooks/useHabitSheets';
+import { LargeTitle } from '@/components/ui/LargeTitle';
+import { BubbleCard } from '@/components/ui/BubbleCard';
 
 export default function HabitsPage() {
   const [showArchived, setShowArchived] = useState(false);
-  const [editingHabit, setEditingHabit] = useState<Habit | 'new' | null>(null);
-  const { data: habits, isLoading } = useHabits(showArchived);
+  const { data: habits = [], isLoading } = useHabits(showArchived);
+  const { data: streaks = [] } = useHabitStreaks();
+  const { openCreate, openDetail } = useHabitSheets();
 
-  const visibleHabits = habits?.filter((h) => showArchived || h.is_active) ?? [];
+  const visibleHabits = habits.filter((h) => showArchived || h.is_active);
+
+  function streakFor(id: string) {
+    return streaks.find((s) => s.habit_id === id)?.current_streak ?? 0;
+  }
 
   return (
-    <div className="px-4 pt-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Habits</h1>
+    <div className="pt-4">
+      <div className="flex items-start justify-between gap-2 px-5">
+        <LargeTitle title="Habits" className="px-0" />
         <button
-          onClick={() => setEditingHabit('new')}
-          className="flex items-center gap-1 rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium"
+          type="button"
+          onClick={openCreate}
+          className="mt-3 inline-flex items-center gap-1.5 rounded-pill bg-primary px-3.5 py-1.5 text-xs font-semibold text-inverse"
         >
-          <Plus size={16} /> New
+          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} /> Habit
         </button>
       </div>
 
-      <button onClick={() => setShowArchived((v) => !v)} className="mb-4 text-xs text-slate-400 underline">
-        {showArchived ? 'Hide archived' : 'Show archived'}
-      </button>
-
-      {isLoading && <p className="text-slate-400">Loading…</p>}
-
-      {!isLoading && visibleHabits.length === 0 && (
-        <p className="text-slate-400">No habits yet. Create your first one.</p>
-      )}
-
-      <div className="space-y-2">
-        {visibleHabits.map((habit) => (
-          <HabitListItem key={habit.id} habit={habit} onEdit={() => setEditingHabit(habit)} />
-        ))}
+      <div className="mt-1 mb-6 flex justify-end px-5">
+        <button
+          type="button"
+          onClick={() => setShowArchived((v) => !v)}
+          className="text-xs font-medium uppercase tracking-wider text-muted hover:text-secondary"
+        >
+          {showArchived ? 'Hide archived' : 'Show archived'}
+        </button>
       </div>
 
-      {editingHabit && (
-        <div className="fixed inset-0 z-20 flex items-end bg-black/60">
-          <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-surface p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{editingHabit === 'new' ? 'New habit' : 'Edit habit'}</h2>
-              <button onClick={() => setEditingHabit(null)} aria-label="Close">
-                <X size={20} />
-              </button>
-            </div>
-            <HabitForm
-              habit={editingHabit === 'new' ? undefined : editingHabit}
-              onDone={() => setEditingHabit(null)}
-            />
-          </div>
+      {isLoading && <p className="px-5 text-sm text-muted">Loading…</p>}
+
+      {!isLoading && visibleHabits.length === 0 && (
+        <div className="px-5 text-center">
+          <p className="font-serif-display text-xl text-primary">No habits yet</p>
+          <p className="mt-1 text-sm text-muted">Tap the + to create your first one.</p>
         </div>
       )}
+
+      <div className="flex flex-wrap justify-center gap-x-6 gap-y-8 px-4 pb-12">
+        {visibleHabits.map((habit, idx) => (
+          <BubbleCard
+            key={habit.id}
+            habit={habit}
+            count={streakFor(habit.id)}
+            size={idx % 3 === 1 ? 200 : 160}
+            onClick={() => openDetail(habit)}
+          />
+        ))}
+      </div>
     </div>
   );
 }

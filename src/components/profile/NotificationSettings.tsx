@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Bell, BellOff } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { usePushSubscription } from '@/hooks/usePushSubscription';
 import { useToast } from '@/hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
+import { cn } from '@/lib/utils';
 
 export function NotificationSettings() {
   const { session } = useAuth();
@@ -46,32 +47,59 @@ export function NotificationSettings() {
   }
 
   if (!isSupported) {
-    return <p className="text-xs text-slate-500">Push notifications aren't supported on this device/browser.</p>;
+    return <p className="text-xs text-muted">Push notifications aren't supported on this device.</p>;
   }
 
   return (
-    <div className="space-y-3 rounded-xl border border-surface-border bg-surface-raised p-4">
-      <button
-        onClick={handleToggle}
-        disabled={isToggling}
-        className="flex w-full items-center justify-between disabled:opacity-50"
+    <div className="divide-y divide-DEFAULT rounded-card bg-surface shadow-card">
+      <Row
+        label="Habit reminders"
+        icon={<Bell className={cn('h-4 w-4', isSubscribed ? 'text-accent' : 'text-muted')} />}
       >
-        <span className="flex items-center gap-2 text-sm">
-          {isSubscribed ? <Bell size={16} className="text-indigo-400" /> : <BellOff size={16} className="text-slate-400" />}
-          Habit reminders
-        </span>
-        <span className="text-xs text-slate-400">{isSubscribed ? 'On' : 'Off'}</span>
-      </button>
-
-      <label className="flex items-center justify-between text-sm">
-        <span>Daily summary</span>
-        <input
-          type="checkbox"
+        <Switch checked={isSubscribed} disabled={isToggling} onChange={handleToggle} />
+      </Row>
+      <Row label="Daily summary">
+        <Switch
           checked={profile?.daily_summary_enabled ?? false}
-          onChange={(e) => handleDailySummaryToggle(e.target.checked)}
-          className="h-4 w-4"
+          onChange={() => handleDailySummaryToggle(!profile?.daily_summary_enabled)}
         />
-      </label>
+      </Row>
     </div>
+  );
+}
+
+function Row({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+      <span className="flex items-center gap-2.5 text-[15px] text-primary">
+        {icon}
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
+function Switch({ checked, disabled, onChange }: { checked: boolean; disabled?: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={onChange}
+      className={cn(
+        'relative inline-flex h-7 w-12 shrink-0 rounded-full border border-transparent transition disabled:opacity-50',
+        checked ? 'bg-accent' : 'bg-surface-raised',
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          'absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform',
+          checked ? 'translate-x-5' : 'translate-x-0.5',
+        )}
+      />
+    </button>
   );
 }

@@ -28,6 +28,7 @@ function toInsertPayload(values: HabitFormValues, userId: string) {
     user_id: userId,
     name: values.name.trim(),
     description: values.description.trim() || null,
+    purpose: values.purpose.trim() || null,
     category: values.category.trim() || null,
     color: values.color,
     icon: values.icon,

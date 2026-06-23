@@ -14,11 +14,11 @@ export function IconPicker({ value, onChange }: { value: string; onChange: (icon
             onClick={() => onChange(name)}
             aria-label={`Select icon ${name}`}
             className={cn(
-              'flex h-10 w-10 items-center justify-center rounded-lg border',
-              isSelected ? 'border-indigo-400 bg-indigo-500/20 text-indigo-300' : 'border-surface-border text-slate-400',
+              'flex h-10 w-10 items-center justify-center rounded-input border transition',
+              isSelected ? 'border-accent bg-accent/10 text-accent' : 'border-DEFAULT text-secondary',
             )}
           >
-            <Icon size={18} />
+            <Icon className="h-4 w-4" />
           </button>
         );
       })}

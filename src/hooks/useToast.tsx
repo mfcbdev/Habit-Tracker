@@ -28,15 +28,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4">
+      <div className="fixed inset-x-0 bottom-28 z-50 flex flex-col items-center gap-2 px-4">
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              'w-full max-w-sm rounded-lg px-4 py-3 text-sm shadow-lg',
-              t.variant === 'error' && 'bg-red-500/90 text-white',
-              t.variant === 'success' && 'bg-emerald-500/90 text-white',
-              t.variant === 'default' && 'bg-surface-raised text-slate-100',
+              'w-full max-w-sm rounded-card px-4 py-3 text-sm font-medium shadow-floating',
+              t.variant === 'error' && 'bg-danger text-accent-contrast',
+              t.variant === 'success' && 'bg-success text-accent-contrast',
+              t.variant === 'default' && 'bg-surface text-primary',
             )}
           >
             {t.message}

@@ -52,6 +52,7 @@ export interface Database {
           user_id: string;
           name: string;
           description: string | null;
+          purpose: string | null;
           category: string | null;
           color: string;
           icon: string;
@@ -70,6 +71,7 @@ export interface Database {
           user_id: string;
           name: string;
           description?: string | null;
+          purpose?: string | null;
           category?: string | null;
           color?: string;
           icon?: string;
