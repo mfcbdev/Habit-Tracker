@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { addDays, format } from 'date-fns';
+import { useEffect, useState } from 'react';
+import { addDays, format, parseISO } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 import { useScheduleForDay } from '@/hooks/useScheduleForDay';
@@ -7,36 +7,29 @@ import { useProfile } from '@/hooks/useProfile';
 import { useHabitSheets } from '@/hooks/useHabitSheets';
 import { Timeline } from '@/components/schedule/Timeline';
 import { LargeTitle } from '@/components/ui/LargeTitle';
-import { getWeekdayInTimezone } from '@/lib/utils';
+import { getTodayInTimezone } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import type { TimeBlockEvent } from '@/types';
-
-const WEEKDAY_LONG = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-/** Date of the next occurrence of `targetWeekday` (>= today). 0=Sun..6=Sat. */
-function nextOccurrenceOf(targetWeekday: number, todayWeekday: number): Date {
-  const today = new Date();
-  const offset = (targetWeekday - todayWeekday + 7) % 7;
-  return addDays(today, offset);
-}
 
 export default function SchedulePage() {
   const { data: profile } = useProfile();
   const timezone = profile?.timezone ?? 'UTC';
-  const todayWeekday = getWeekdayInTimezone(timezone);
-  const [weekday, setWeekday] = useState<number>(todayWeekday);
+  const today = getTodayInTimezone(timezone);
+
+  const [selectedDate, setSelectedDate] = useState<string>(today);
   const [scheduleOpen, setScheduleOpen] = useState(true);
+
+  const isToday = selectedDate === today;
+  const selectedDateObj = parseISO(selectedDate);
+  const weekday = selectedDateObj.getDay();
   const { events, isLoading } = useScheduleForDay(weekday);
   const { openDetail } = useHabitSheets();
 
-  const isToday = weekday === todayWeekday;
-  const displayedDate = useMemo(
-    () => (isToday ? new Date() : nextOccurrenceOf(weekday, todayWeekday)),
-    [isToday, weekday, todayWeekday],
-  );
-  const dateSubtitle = format(displayedDate, 'd MMMM').toUpperCase();
+  // Re-anchor to "today" if the wall clock rolls over while the page is open.
+  useEffect(() => {
+    if (isToday) setSelectedDate(today);
+  }, [today, isToday]);
 
-  // Tick every minute so the now line stays accurate without a wall-clock refresh.
   const [nowMinutes, setNowMinutes] = useState<number | undefined>(() =>
     isToday ? computeNowMinutes(timezone) : undefined,
   );
@@ -54,12 +47,16 @@ export default function SchedulePage() {
     openDetail(event.habit);
   }
 
+  function shiftDays(delta: number) {
+    setSelectedDate(format(addDays(selectedDateObj, delta), 'yyyy-MM-dd'));
+  }
+
   return (
     <div className="pt-4">
       <LargeTitle
-        eyebrow={isToday ? 'Today' : WEEKDAY_SHORT[weekday]}
-        title={WEEKDAY_LONG[weekday]}
-        subtitle={dateSubtitle}
+        eyebrow={isToday ? 'Today' : format(selectedDateObj, 'EEE')}
+        title={format(selectedDateObj, 'EEEE').toUpperCase()}
+        subtitle={format(selectedDateObj, 'd MMMM').toUpperCase()}
       />
 
       <div className="flex items-center justify-between gap-4 px-5 pb-3">
@@ -74,7 +71,7 @@ export default function SchedulePage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setWeekday((d) => (d + 6) % 7)}
+            onClick={() => shiftDays(-1)}
             aria-label="Previous day"
             className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-raised text-secondary"
           >
@@ -82,15 +79,18 @@ export default function SchedulePage() {
           </button>
           <button
             type="button"
-            onClick={() => setWeekday(todayWeekday)}
+            onClick={() => setSelectedDate(today)}
             disabled={isToday}
-            className="rounded-pill px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-secondary disabled:opacity-50"
+            className={cn(
+              'rounded-pill px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition',
+              isToday ? 'text-muted' : 'bg-primary text-inverse',
+            )}
           >
             Today
           </button>
           <button
             type="button"
-            onClick={() => setWeekday((d) => (d + 1) % 7)}
+            onClick={() => shiftDays(1)}
             aria-label="Next day"
             className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-raised text-secondary"
           >

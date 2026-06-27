@@ -3,6 +3,8 @@ import { formatTimeRange } from '@/lib/utils';
 import type { TimeBlockEvent } from '@/types';
 
 const HOUR_HEIGHT = 64;
+const START_HOUR = 7;
+const END_HOUR = 24; // exclusive upper bound for label generation, inclusive for layout extent
 
 interface TimeBlockProps {
   event: TimeBlockEvent;
@@ -11,8 +13,17 @@ interface TimeBlockProps {
 
 export function TimeBlock({ event, onClick }: TimeBlockProps) {
   const Icon = getIcon(event.habit.icon);
-  const top = (event.startMinutes / 60) * HOUR_HEIGHT;
-  const height = Math.max(((event.endMinutes - event.startMinutes) / 60) * HOUR_HEIGHT, 36);
+  const startOffset = (event.startMinutes - START_HOUR * 60) / 60;
+  const endOffset = (event.endMinutes - START_HOUR * 60) / 60;
+
+  // Hide events that fall entirely outside the visible window.
+  if (endOffset <= 0 || startOffset >= END_HOUR - START_HOUR) return null;
+
+  // Clamp the visible portion into the window so early/late events still render at the edges.
+  const clampedStart = Math.max(startOffset, 0);
+  const clampedEnd = Math.min(endOffset, END_HOUR - START_HOUR);
+  const top = clampedStart * HOUR_HEIGHT;
+  const height = Math.max((clampedEnd - clampedStart) * HOUR_HEIGHT, 36);
 
   return (
     <button
@@ -41,4 +52,4 @@ export function TimeBlock({ event, onClick }: TimeBlockProps) {
   );
 }
 
-export { HOUR_HEIGHT };
+export { HOUR_HEIGHT, START_HOUR, END_HOUR };

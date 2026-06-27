@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { TimeBlock, HOUR_HEIGHT } from './TimeBlock';
+import { TimeBlock, HOUR_HEIGHT, START_HOUR, END_HOUR } from './TimeBlock';
 import type { TimeBlockEvent } from '@/types';
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => i + START_HOUR);
+const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 interface TimelineProps {
   events: TimeBlockEvent[];
@@ -15,21 +16,24 @@ interface TimelineProps {
 
 export function Timeline({ events, onSelectEvent, nowMinutes, scrollToNow }: TimelineProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const nowOffsetHours =
+    nowMinutes !== undefined ? (nowMinutes - START_HOUR * 60) / 60 : undefined;
+  const nowVisible =
+    nowOffsetHours !== undefined && nowOffsetHours >= 0 && nowOffsetHours <= TOTAL_HOURS;
 
   useEffect(() => {
-    if (!scrollToNow || nowMinutes === undefined || !containerRef.current) return;
-    const top = (nowMinutes / 60) * HOUR_HEIGHT - 80;
-    containerRef.current.scrollIntoView({ block: 'start', behavior: 'auto' });
+    if (!scrollToNow || nowOffsetHours === undefined || !nowVisible || !containerRef.current) return;
+    const top = nowOffsetHours * HOUR_HEIGHT - 80;
     window.scrollTo({ top: Math.max(0, top + containerRef.current.offsetTop), behavior: 'auto' });
-  }, [scrollToNow, nowMinutes]);
+  }, [scrollToNow, nowOffsetHours, nowVisible]);
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: HOURS.length * HOUR_HEIGHT }}>
+    <div ref={containerRef} className="relative" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
       {HOURS.map((hour) => (
         <div
           key={hour}
           className="absolute left-12 right-0 border-t border-DEFAULT"
-          style={{ top: hour * HOUR_HEIGHT }}
+          style={{ top: (hour - START_HOUR) * HOUR_HEIGHT }}
         >
           <span className="absolute -top-2.5 -left-12 w-12 pr-2 text-right text-[10px] font-medium uppercase tracking-wider text-muted">
             {hour.toString().padStart(2, '0')}:00
@@ -39,16 +43,14 @@ export function Timeline({ events, onSelectEvent, nowMinutes, scrollToNow }: Tim
       {events.map((event) => (
         <TimeBlock key={event.habit.id} event={event} onClick={() => onSelectEvent(event)} />
       ))}
-      {nowMinutes !== undefined && <NowLine nowMinutes={nowMinutes} />}
+      {nowVisible && <NowLine offsetHours={nowOffsetHours!} minutes={nowMinutes!} />}
     </div>
   );
 }
 
-function NowLine({ nowMinutes }: { nowMinutes: number }) {
-  const top = (nowMinutes / 60) * HOUR_HEIGHT;
-  const label = `${Math.floor(nowMinutes / 60)
-    .toString()
-    .padStart(2, '0')}:${(nowMinutes % 60).toString().padStart(2, '0')}`;
+function NowLine({ offsetHours, minutes }: { offsetHours: number; minutes: number }) {
+  const top = offsetHours * HOUR_HEIGHT;
+  const label = `${Math.floor(minutes / 60).toString().padStart(2, '0')}:${(minutes % 60).toString().padStart(2, '0')}`;
   return (
     <div className="pointer-events-none absolute left-12 right-0 z-20" style={{ top }}>
       <span className="absolute -top-2.5 -left-12 w-12 pr-2 text-right text-[10px] font-semibold uppercase tracking-wider text-danger">

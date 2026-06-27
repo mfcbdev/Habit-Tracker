@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { AnimatePresence } from 'framer-motion';
-import { useTodayHabits } from '@/hooks/useTodayHabits';
+import { ArrowLeft } from 'lucide-react';
+import { useHabitsForDate } from '@/hooks/useHabitsForDate';
 import { useHabitStreaks } from '@/hooks/useHabitStreaks';
 import { useProfile } from '@/hooks/useProfile';
 import { useWeekStatus } from '@/hooks/useWeekStatus';
@@ -32,13 +33,25 @@ export default function TodayPage() {
   const { data: profile } = useProfile();
   const timezone = profile?.timezone ?? 'UTC';
   const today = getTodayInTimezone(timezone);
-  const { data: instances = [], isLoading, toggleComplete } = useTodayHabits();
+
+  const [selectedDate, setSelectedDate] = useState<string>(today);
+  const isViewingToday = selectedDate === today;
+  const isPast = selectedDate < today;
+
+  // If the user lingers across midnight, snap `today` and reset the date.
+  useEffect(() => {
+    if (selectedDate > today) setSelectedDate(today);
+  }, [today, selectedDate]);
+
+  const { data: instances = [], isLoading, toggleComplete } = useHabitsForDate(selectedDate);
   const { data: streaks } = useHabitStreaks();
   const { data: weekStatus = {} } = useWeekStatus();
 
+  // Past days: always show all (the To-dos/Completed split makes less sense
+  // when toggles are disabled). Today: respect the filter.
   const filtered = useMemo(
-    () => instances.filter((i) => (filter === 'todos' ? !i.isCompleted : i.isCompleted)),
-    [instances, filter],
+    () => (isPast ? instances : instances.filter((i) => (filter === 'todos' ? !i.isCompleted : i.isCompleted))),
+    [instances, filter, isPast],
   );
 
   const buckets = useMemo<Bucket[]>(() => {
@@ -57,40 +70,59 @@ export default function TodayPage() {
   }
 
   const remaining = instances.filter((i) => !i.isCompleted).length;
-  const dateLabel = format(parseISO(today), 'EEEE, MMM d');
+  const done = instances.filter((i) => i.isCompleted).length;
+
+  const selectedDateObj = parseISO(selectedDate);
+  const titleLabel = isViewingToday
+    ? `Today, ${format(selectedDateObj, 'MMM d')}`
+    : format(selectedDateObj, 'EEEE, MMM d');
+  const subtitleLabel = isLoading
+    ? 'Loading…'
+    : isPast
+      ? `${done} of ${instances.length} done`
+      : remaining === 0
+        ? 'All habits done · enjoy your day'
+        : `${remaining} habit${remaining === 1 ? '' : 's'} left`;
 
   return (
     <div className="pt-4">
-      <LargeTitle
-        title={`Today, ${dateLabel.split(', ')[1]}`}
-        subtitle={
-          isLoading
-            ? 'Loading…'
-            : remaining === 0
-              ? 'All habits done · enjoy your day'
-              : `${remaining} habit${remaining === 1 ? '' : 's'} left`
-        }
-      />
+      <LargeTitle title={titleLabel} subtitle={subtitleLabel} />
 
       <div className="mt-1 mb-5">
-        <WeekStrip today={today} statuses={weekStatus} />
+        <WeekStrip today={today} selectedDate={selectedDate} statuses={weekStatus} onSelectDate={setSelectedDate} />
       </div>
 
-      <div className="flex justify-center px-5">
-        <SegmentedControl<Filter>
-          options={[
-            { value: 'todos', label: 'To-dos' },
-            { value: 'completed', label: 'Completed' },
-          ]}
-          value={filter}
-          onChange={setFilter}
-        />
-      </div>
+      {isViewingToday ? (
+        <div className="flex justify-center px-5">
+          <SegmentedControl<Filter>
+            options={[
+              { value: 'todos', label: 'To-dos' },
+              { value: 'completed', label: 'Completed' },
+            ]}
+            value={filter}
+            onChange={setFilter}
+          />
+        </div>
+      ) : (
+        <div className="flex justify-center px-5">
+          <button
+            type="button"
+            onClick={() => setSelectedDate(today)}
+            className="inline-flex items-center gap-1.5 rounded-pill bg-surface-raised px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-secondary"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to today
+          </button>
+        </div>
+      )}
 
       <div className="mt-6 space-y-7 px-5">
         {!isLoading && filtered.length === 0 && (
           <p className="text-center text-sm text-muted">
-            {filter === 'todos' ? 'All done. Nice work.' : 'Nothing completed yet today.'}
+            {isPast
+              ? 'Nothing was scheduled this day.'
+              : filter === 'todos'
+                ? 'All done. Nice work.'
+                : 'Nothing completed yet today.'}
           </p>
         )}
 
@@ -107,6 +139,7 @@ export default function TodayPage() {
                     instance={instance}
                     streak={streakFor(instance.habit.id)}
                     onToggle={() => toggleComplete(instance)}
+                    readOnly={isPast}
                   />
                 ))}
               </div>
