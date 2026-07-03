@@ -18,6 +18,15 @@ function arrayBufferToBase64(buffer: ArrayBuffer | null): string {
   return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
+export class PushSubscribeError extends Error {
+  code: 'permission_denied' | 'permission_default' | 'no_vapid_key' | 'sw_missing' | 'subscribe_failed' | 'db_insert_failed' | 'unknown';
+  constructor(code: PushSubscribeError['code'], message: string) {
+    super(message);
+    this.code = code;
+    this.name = 'PushSubscribeError';
+  }
+}
+
 export function usePushSubscription() {
   const { session } = useAuth();
   const userId = session?.user.id;
@@ -37,16 +46,49 @@ export function usePushSubscription() {
   }, [isSupported]);
 
   const subscribe = useCallback(async () => {
-    if (!userId) return;
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') return;
+    if (!userId) throw new PushSubscribeError('unknown', 'Not signed in.');
 
-    const registration = await navigator.serviceWorker.ready;
+    // Check current permission BEFORE requesting so we can differentiate
+    // "already denied" (permanent, needs Settings) from "user just tapped no".
+    if (Notification.permission === 'denied') {
+      throw new PushSubscribeError(
+        'permission_denied',
+        'Notifications were previously blocked for this site. Allow them from your device Settings and try again.',
+      );
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === 'denied') {
+      throw new PushSubscribeError('permission_denied', 'Notification permission was denied.');
+    }
+    if (permission !== 'granted') {
+      throw new PushSubscribeError('permission_default', 'Notification permission was dismissed.');
+    }
+
     const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
-    });
+    if (!vapidPublicKey) {
+      throw new PushSubscribeError('no_vapid_key', 'VITE_VAPID_PUBLIC_KEY is missing from the build.');
+    }
+
+    let registration: ServiceWorkerRegistration;
+    try {
+      registration = await navigator.serviceWorker.ready;
+    } catch (err) {
+      throw new PushSubscribeError('sw_missing', `Service worker unavailable: ${err instanceof Error ? err.message : err}`);
+    }
+
+    let subscription: PushSubscription;
+    try {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
+    } catch (err) {
+      throw new PushSubscribeError(
+        'subscribe_failed',
+        `Browser refused subscription: ${err instanceof Error ? err.message : err}`,
+      );
+    }
 
     const keys = subscription.toJSON().keys;
     const { error } = await supabase.from('push_subscriptions').upsert(
@@ -59,7 +101,9 @@ export function usePushSubscription() {
       },
       { onConflict: 'user_id,endpoint' },
     );
-    if (error) throw error;
+    if (error) {
+      throw new PushSubscribeError('db_insert_failed', `Could not save subscription: ${error.message}`);
+    }
     setIsSubscribed(true);
   }, [userId]);
 

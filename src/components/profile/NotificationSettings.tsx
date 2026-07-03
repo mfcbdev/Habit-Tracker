@@ -3,7 +3,7 @@ import { Bell, Share, Send } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
-import { usePushSubscription } from '@/hooks/usePushSubscription';
+import { usePushSubscription, PushSubscribeError } from '@/hooks/usePushSubscription';
 import { usePlatform } from '@/hooks/usePlatform';
 import { useToast } from '@/hooks/useToast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -29,8 +29,14 @@ export function NotificationSettings() {
         await subscribe();
         showToast('Notifications enabled.', 'success');
       }
-    } catch {
-      showToast('Could not update notification settings.', 'error');
+    } catch (err) {
+      const message =
+        err instanceof PushSubscribeError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'Could not update notification settings.';
+      showToast(message, 'error');
     } finally {
       setIsToggling(false);
     }

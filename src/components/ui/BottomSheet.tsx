@@ -22,13 +22,21 @@ export function BottomSheet({ open, onOpenChange, children, title, className }: 
             className,
           )}
         >
+          {/* Only the handle is draggable — the scrollable body is opted out
+              via data-vaul-no-drag so native inputs (<input type="time">, etc)
+              on iOS don't get their pointer events interpreted as sheet drags. */}
           <div className="mx-auto mt-3 mb-1 h-1.5 w-10 rounded-full bg-border-strong" />
           {title && (
             <Drawer.Title className="px-5 pt-1 pb-2 text-center text-sm font-medium text-secondary">
               {title}
             </Drawer.Title>
           )}
-          <div className="overflow-y-auto overscroll-contain px-5 pb-8 pt-2">{children}</div>
+          <div
+            data-vaul-no-drag
+            className="overflow-y-auto overscroll-contain px-5 pb-8 pt-2"
+          >
+            {children}
+          </div>
         </Drawer.Content>
       </Drawer.Portal>
     </Drawer.Root>

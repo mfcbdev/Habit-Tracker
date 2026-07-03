@@ -36,8 +36,9 @@ const DEFAULTS: HabitFormValues = {
 
 const STEP_LABELS = ['Template', 'Identity', 'Schedule', 'Details'];
 
+// text-base (16px) is the iOS threshold that avoids auto-zoom on input focus.
 const inputBase =
-  'w-full rounded-input border border-DEFAULT bg-surface-raised px-3 py-2.5 text-[15px] text-primary placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 transition';
+  'w-full rounded-input border border-DEFAULT bg-surface-raised px-3 py-2.5 text-base text-primary placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30 transition';
 const fieldLabel = 'mb-1.5 block text-xs font-medium uppercase tracking-wider text-muted';
 
 export function HabitWizard({ onDone }: HabitWizardProps) {
