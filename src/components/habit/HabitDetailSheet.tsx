@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Clock, MoreHorizontal, Pencil, Archive, Trash2, X } from 'lucide-react';
+import { Clock, MoreHorizontal, Pencil, Archive, Trash2, X, Quote } from 'lucide-react';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ActionMenu } from '@/components/ui/ActionMenu';
 import { HeatmapCalendar } from '@/components/ui/HeatmapCalendar';
@@ -114,6 +114,15 @@ export function HabitDetailSheet({ habit, open, onClose }: HabitDetailSheetProps
             <Clock className="h-4 w-4" />
             <span>Daily at {startTime}</span>
           </div>
+
+          {habit.description?.trim() && (
+            <div className="rounded-card border border-DEFAULT bg-surface-raised p-4">
+              <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+                <Quote className="h-3 w-3" /> Why this matters
+              </p>
+              <p className="text-[14px] leading-relaxed text-secondary">{habit.description}</p>
+            </div>
+          )}
 
           <div className="rounded-card bg-surface-raised p-5">
             <p className="text-xs font-medium uppercase tracking-wider text-muted">Total repetitions</p>

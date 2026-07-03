@@ -9,6 +9,7 @@ import { useWeekStatus } from '@/hooks/useWeekStatus';
 import { getTodayInTimezone, toMinutes } from '@/lib/utils';
 import { LargeTitle } from '@/components/ui/LargeTitle';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
+import { WisdomCard } from '@/components/ui/WisdomCard';
 import { WeekStrip } from '@/components/habit/WeekStrip';
 import { HabitCapsuleCard } from '@/components/habit/HabitCapsuleCard';
 import type { HabitInstance } from '@/types';
@@ -87,6 +88,12 @@ export default function TodayPage() {
   return (
     <div className="pt-4">
       <LargeTitle title={titleLabel} subtitle={subtitleLabel} />
+
+      {isViewingToday && (
+        <div className="mb-5">
+          <WisdomCard date={today} />
+        </div>
+      )}
 
       <div className="mt-1 mb-5">
         <WeekStrip today={today} selectedDate={selectedDate} statuses={weekStatus} onSelectDate={setSelectedDate} />

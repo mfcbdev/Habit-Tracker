@@ -7,51 +7,53 @@ const corsHeaders: Record<string, string> = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+function json(status: number, body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeaders },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
-  if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ ok: false, error: 'method_not_allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
-  }
+  if (req.method !== 'POST') return json(405, { ok: false, error: 'method_not_allowed' });
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ ok: false, error: 'missing_auth' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
-    }
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const token = authHeader.replace(/^Bearer\s+/i, '');
+    if (!token) return json(401, { ok: false, error: 'missing_auth' });
 
     const url = Deno.env.get('SUPABASE_URL');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
-    if (!url || !serviceRoleKey || !anonKey) {
-      throw new Error('Supabase env vars not configured');
+    if (!url || !serviceRoleKey) {
+      return json(500, { ok: false, error: 'env_missing', detail: { url: !!url, serviceRoleKey: !!serviceRoleKey } });
     }
 
-    // Identify the caller via their JWT (anon client honors the user token).
-    const userClient = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } });
-    const { data: userData, error: userError } = await userClient.auth.getUser();
-    if (userError || !userData.user) {
-      return new Response(JSON.stringify({ ok: false, error: 'invalid_auth' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+    // Service role for all DB and JWT-verification operations.
+    const admin = createClient(url, serviceRoleKey);
+
+    // Verify the user JWT by passing it explicitly — avoids the global-header
+    // pattern that's flaky across supabase-js versions.
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
+    if (userError || !userData?.user) {
+      return json(401, { ok: false, error: 'invalid_auth', detail: userError?.message ?? null });
     }
     const userId = userData.user.id;
 
-    // Service role to read subscriptions and self-heal stale ones.
-    const admin = createClient(url, serviceRoleKey);
-    const { data: subs } = await admin.from('push_subscriptions').select('*').eq('user_id', userId);
+    const { data: subs, error: subsError } = await admin
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', userId);
+    if (subsError) return json(500, { ok: false, error: 'subs_query_failed', detail: subsError.message });
+    if (!subs || subs.length === 0) return json(404, { ok: false, error: 'no_subscriptions' });
 
-    if (!subs || subs.length === 0) {
-      return new Response(JSON.stringify({ ok: false, error: 'no_subscriptions' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      });
+    const vapidSet = {
+      VAPID_PUBLIC_KEY: !!Deno.env.get('VAPID_PUBLIC_KEY'),
+      VAPID_PRIVATE_KEY: !!Deno.env.get('VAPID_PRIVATE_KEY'),
+      VAPID_SUBJECT: !!Deno.env.get('VAPID_SUBJECT'),
+    };
+    if (!vapidSet.VAPID_PUBLIC_KEY || !vapidSet.VAPID_PRIVATE_KEY) {
+      return json(500, { ok: false, error: 'vapid_not_configured', detail: vapidSet });
     }
 
     const payload = {
@@ -62,25 +64,26 @@ Deno.serve(async (req: Request) => {
     };
 
     let delivered = 0;
+    const failures: { endpoint: string; statusCode?: number }[] = [];
     for (const sub of subs) {
       const result = await sendPush(
         { endpoint: sub.endpoint, p256dh: sub.p256dh, authKey: sub.auth_key },
         payload,
       );
-      if (result.ok) delivered += 1;
-      else if (result.statusCode === 404 || result.statusCode === 410) {
-        await admin.from('push_subscriptions').delete().eq('id', sub.id);
+      if (result.ok) {
+        delivered += 1;
+      } else {
+        failures.push({ endpoint: sub.endpoint.slice(0, 60) + '…', statusCode: result.statusCode });
+        if (result.statusCode === 404 || result.statusCode === 410) {
+          await admin.from('push_subscriptions').delete().eq('id', sub.id);
+        }
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, delivered, total: subs.length }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    return json(200, { ok: true, delivered, total: subs.length, failures });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-    });
+    const detail = err instanceof Error ? { name: err.name, message: err.message, stack: err.stack } : String(err);
+    console.error('send-test-notification error', detail);
+    return json(500, { ok: false, error: 'unhandled', detail });
   }
 });

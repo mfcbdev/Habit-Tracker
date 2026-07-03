@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Flame, Check, X } from 'lucide-react';
 import { fireCompletionConfetti } from './CompletionAnimation';
+import { playCompletionSound } from '@/lib/sound';
 import { cn } from '@/lib/utils';
 import type { HabitInstance } from '@/types';
 
@@ -26,6 +27,7 @@ export function HabitCapsuleCard({ instance, streak, onToggle, readOnly = false 
         x: (rect.left + rect.width / 2) / window.innerWidth,
         y: (rect.top + rect.height / 2) / window.innerHeight,
       });
+      playCompletionSound();
     }
     onToggle();
   }

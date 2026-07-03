@@ -4,8 +4,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGamification } from '@/hooks/useGamification';
 import { useCompletionRates, useWeeklyHpSummary, useRanks } from '@/hooks/useStats';
 import { useTheme } from '@/hooks/useTheme';
+import { useSoundPref } from '@/hooks/useSoundPref';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import { useHabits } from '@/hooks/useHabits';
+import { AvatarUploader } from '@/components/profile/AvatarUploader';
 import { RankProgress } from '@/components/profile/RankProgress';
 import { BadgeGrid } from '@/components/profile/BadgeGrid';
 import { RecentResultsStrip } from '@/components/profile/RecentResultsStrip';
@@ -13,7 +15,6 @@ import { ActivityHeatmap } from '@/components/profile/ActivityHeatmap';
 import { HabitCompletionBars } from '@/components/profile/HabitCompletionBars';
 import { HpProgressionChart } from '@/components/profile/HpProgressionChart';
 import { NotificationSettings } from '@/components/profile/NotificationSettings';
-import { LargeTitle } from '@/components/ui/LargeTitle';
 import { SegmentedControl } from '@/components/ui/SegmentedControl';
 
 export default function ProfilePage() {
@@ -26,6 +27,7 @@ export default function ProfilePage() {
   const { data: activity30 = [] } = useUserActivity(30);
   const { data: activity90 = [] } = useUserActivity(90);
   const { theme, setTheme } = useTheme();
+  const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSoundPref();
 
   const completionRate30 = useMemo(() => {
     const totalDue = activity30.reduce((s, d) => s + d.dueCount, 0);
@@ -40,7 +42,13 @@ export default function ProfilePage() {
 
   return (
     <div className="pt-4 pb-8">
-      <LargeTitle title={displayName} subtitle={rankLabel || undefined} />
+      <div className="flex flex-col items-center gap-3 px-5 pt-2 pb-4">
+        <AvatarUploader avatarUrl={profile?.avatar_url ?? null} displayName={displayName} size={96} />
+        <div className="text-center">
+          <h1 className="font-serif-display text-[30px] leading-none text-primary">{displayName}</h1>
+          {rankLabel && <p className="mt-1 text-[13px] text-secondary">{rankLabel}</p>}
+        </div>
+      </div>
 
       <div className="space-y-7 px-5">
         {profile && ranks.length > 0 && <RankProgress habitPoints={profile.habit_points} ranks={ranks} />}
@@ -90,17 +98,24 @@ export default function ProfilePage() {
         </Section>
 
         <Section title="Appearance">
-          <div className="rounded-card bg-surface p-4 shadow-card">
-            <SegmentedControl
-              options={[
-                { value: 'light', label: 'Light' },
-                { value: 'dark', label: 'Dark' },
-                { value: 'system', label: 'System' },
-              ]}
-              value={theme}
-              onChange={(t) => setTheme(t as typeof theme)}
-              className="w-full"
-            />
+          <div className="space-y-3 rounded-card bg-surface p-4 shadow-card">
+            <div>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted">Theme</p>
+              <SegmentedControl
+                options={[
+                  { value: 'light', label: 'Light' },
+                  { value: 'dark', label: 'Dark' },
+                  { value: 'system', label: 'System' },
+                ]}
+                value={theme}
+                onChange={(t) => setTheme(t as typeof theme)}
+                className="w-full"
+              />
+            </div>
+            <div className="flex items-center justify-between border-t border-DEFAULT pt-3">
+              <span className="text-[15px] text-primary">Sound on completion</span>
+              <ToggleSwitch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} />
+            </div>
           </div>
         </Section>
 
@@ -128,6 +143,27 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">{title}</h2>
       {children}
     </section>
+  );
+}
+
+function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className={`relative inline-flex h-7 w-12 shrink-0 rounded-full border border-transparent transition ${
+        checked ? 'bg-accent' : 'bg-surface-raised'
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+          checked ? 'translate-x-5' : 'translate-x-0.5'
+        }`}
+      />
+    </button>
   );
 }
 

@@ -77,32 +77,51 @@ async function sendToUser(supabase: any, userId: string, payload: PushPayload) {
 
 // deno-lint-ignore no-explicit-any
 async function processHabitReminders(supabase: any) {
-  // habits.user_id and profiles.id both reference auth.users(id) independently —
-  // there's no direct FK between habits and profiles for PostgREST to embed on,
-  // so the timezone lookup is a manual join here instead of a `select` embed.
+  const runStart = Date.now();
   const { data: habits, error } = await supabase
     .from('habits')
     .select('id, user_id, name, time_start, reminder_offset_minutes, frequency_days')
     .eq('is_active', true);
   if (error) {
-    console.error('Failed to load habits', error);
+    console.error('[send-reminders] load-habits-failed', error);
     return;
   }
-  if (!habits || habits.length === 0) return;
+  if (!habits || habits.length === 0) {
+    console.log('[send-reminders] no-active-habits');
+    return;
+  }
 
   const userIds = [...new Set(habits.map((h: { user_id: string }) => h.user_id))];
   const { data: profiles } = await supabase.from('profiles').select('id, timezone').in('id', userIds);
   const timezoneByUser = new Map<string, string>((profiles ?? []).map((p: { id: string; timezone: string }) => [p.id, p.timezone]));
 
+  const stats = { evaluated: 0, weekday_skip: 0, out_of_window: 0, already_done: 0, already_sent: 0, sent: 0 };
+
   for (const habit of habits) {
+    stats.evaluated += 1;
     const timezone = timezoneByUser.get(habit.user_id) ?? 'UTC';
     const { date, weekday, minutesSinceMidnight } = getNowInTimezone(timezone);
-
-    if (!habit.frequency_days.includes(weekday)) continue;
-
     const reminderMinute = timeToMinutes(habit.time_start) - habit.reminder_offset_minutes;
     const minutesUntilReminder = reminderMinute - minutesSinceMidnight;
-    if (minutesUntilReminder < 0 || minutesUntilReminder >= LOOKAHEAD_MINUTES) continue;
+
+    const traceBase = {
+      habit_id: habit.id,
+      user_id: habit.user_id,
+      name: habit.name,
+      timezone,
+      local_time: `${Math.floor(minutesSinceMidnight / 60)}:${String(minutesSinceMidnight % 60).padStart(2, '0')}`,
+      reminder_minute: reminderMinute,
+      minutes_until: minutesUntilReminder,
+    };
+
+    if (!habit.frequency_days.includes(weekday)) {
+      stats.weekday_skip += 1;
+      continue;
+    }
+    if (minutesUntilReminder < 0 || minutesUntilReminder >= LOOKAHEAD_MINUTES) {
+      stats.out_of_window += 1;
+      continue;
+    }
 
     const { data: completion } = await supabase
       .from('habit_completions')
@@ -110,7 +129,11 @@ async function processHabitReminders(supabase: any) {
       .eq('habit_id', habit.id)
       .eq('completed_date', date)
       .maybeSingle();
-    if (completion) continue;
+    if (completion) {
+      stats.already_done += 1;
+      console.log('[send-reminders] skip.already_done', traceBase);
+      continue;
+    }
 
     const { data: alreadySent } = await supabase
       .from('notification_log')
@@ -120,7 +143,11 @@ async function processHabitReminders(supabase: any) {
       .eq('habit_id', habit.id)
       .gte('sent_at', startOfDayUtcIso(timezone, date))
       .maybeSingle();
-    if (alreadySent) continue;
+    if (alreadySent) {
+      stats.already_sent += 1;
+      console.log('[send-reminders] skip.already_sent', traceBase);
+      continue;
+    }
 
     const payload: PushPayload = {
       type: 'habit_reminder',
@@ -130,9 +157,13 @@ async function processHabitReminders(supabase: any) {
       url: '/',
     };
 
+    console.log('[send-reminders] sending', traceBase);
     await sendToUser(supabase, habit.user_id, payload);
     await supabase.from('notification_log').insert({ user_id: habit.user_id, type: 'habit_reminder', habit_id: habit.id, payload });
+    stats.sent += 1;
   }
+
+  console.log('[send-reminders] run-summary', { duration_ms: Date.now() - runStart, ...stats });
 }
 
 // deno-lint-ignore no-explicit-any

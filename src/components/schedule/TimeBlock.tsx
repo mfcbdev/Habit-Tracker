@@ -16,14 +16,15 @@ export function TimeBlock({ event, onClick }: TimeBlockProps) {
   const startOffset = (event.startMinutes - START_HOUR * 60) / 60;
   const endOffset = (event.endMinutes - START_HOUR * 60) / 60;
 
-  // Hide events that fall entirely outside the visible window.
   if (endOffset <= 0 || startOffset >= END_HOUR - START_HOUR) return null;
 
-  // Clamp the visible portion into the window so early/late events still render at the edges.
   const clampedStart = Math.max(startOffset, 0);
   const clampedEnd = Math.min(endOffset, END_HOUR - START_HOUR);
   const top = clampedStart * HOUR_HEIGHT;
   const height = Math.max((clampedEnd - clampedStart) * HOUR_HEIGHT, 36);
+
+  const description = event.habit.description?.trim();
+  const showDescription = height > 76 && description;
 
   return (
     <button
@@ -37,15 +38,23 @@ export function TimeBlock({ event, onClick }: TimeBlockProps) {
         style={{ backgroundColor: event.habit.color }}
         aria-hidden
       />
-      <div className="flex h-full flex-col justify-center pl-4 pr-3">
+      <div className="flex h-full flex-col justify-center gap-0.5 pl-4 pr-3 py-2">
         <span className="flex items-center gap-1.5 text-[14px] font-semibold text-primary">
           <Icon className="h-3.5 w-3.5" style={{ color: event.habit.color }} />
           {event.habit.name}
         </span>
-        {height > 44 && (
+        {height > 44 && !showDescription && (
           <span className="text-[11px] text-muted">
             {formatTimeRange(event.habit.time_start, event.habit.time_end)}
           </span>
+        )}
+        {showDescription && (
+          <>
+            <span className="text-[11px] text-muted">
+              {formatTimeRange(event.habit.time_start, event.habit.time_end)}
+            </span>
+            <span className="line-clamp-2 text-[11px] leading-snug text-secondary">{description}</span>
+          </>
         )}
       </div>
     </button>
