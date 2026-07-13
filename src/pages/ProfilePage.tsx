@@ -5,6 +5,8 @@ import { useGamification } from '@/hooks/useGamification';
 import { useCompletionRates, useWeeklyHpSummary, useRanks } from '@/hooks/useStats';
 import { useTheme } from '@/hooks/useTheme';
 import { useSoundPref } from '@/hooks/useSoundPref';
+import { useI18n } from '@/i18n/I18nProvider';
+import { LanguageToggle } from '@/components/ui/LanguageToggle';
 import { useUserActivity } from '@/hooks/useUserActivity';
 import { useHabits } from '@/hooks/useHabits';
 import { AvatarUploader } from '@/components/profile/AvatarUploader';
@@ -28,6 +30,7 @@ export default function ProfilePage() {
   const { data: activity90 = [] } = useUserActivity(90);
   const { theme, setTheme } = useTheme();
   const { enabled: soundEnabled, setEnabled: setSoundEnabled } = useSoundPref();
+  const { t } = useI18n();
 
   const completionRate30 = useMemo(() => {
     const totalDue = activity30.reduce((s, d) => s + d.dueCount, 0);
@@ -97,23 +100,31 @@ export default function ProfilePage() {
           <BadgeGrid badges={badges} />
         </Section>
 
-        <Section title="Appearance">
+        <Section title={t('profile.section.appearance')}>
           <div className="space-y-3 rounded-card bg-surface p-4 shadow-card">
             <div>
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted">Theme</p>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted">
+                {t('profile.appearance.theme')}
+              </p>
               <SegmentedControl
                 options={[
-                  { value: 'light', label: 'Light' },
-                  { value: 'dark', label: 'Dark' },
-                  { value: 'system', label: 'System' },
+                  { value: 'light', label: t('theme.light') },
+                  { value: 'dark', label: t('theme.dark') },
+                  { value: 'system', label: t('theme.system') },
                 ]}
                 value={theme}
-                onChange={(t) => setTheme(t as typeof theme)}
+                onChange={(next) => setTheme(next as typeof theme)}
                 className="w-full"
               />
             </div>
+            <div className="border-t border-DEFAULT pt-3">
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted">
+                {t('profile.appearance.language')}
+              </p>
+              <LanguageToggle size="md" className="w-full" />
+            </div>
             <div className="flex items-center justify-between border-t border-DEFAULT pt-3">
-              <span className="text-[15px] text-primary">Sound on completion</span>
+              <span className="text-[15px] text-primary">{t('profile.appearance.sound')}</span>
               <ToggleSwitch checked={soundEnabled} onChange={() => setSoundEnabled(!soundEnabled)} />
             </div>
           </div>

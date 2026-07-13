@@ -4,20 +4,22 @@ import { Sun, ListChecks, Calendar, UserRound, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useHabitSheets } from '@/hooks/useHabitSheets';
 import { playTapSound } from '@/lib/sound';
-
-const LEFT_TABS = [
-  { to: '/', label: 'Today', icon: Sun },
-  { to: '/habits', label: 'Habits', icon: ListChecks },
-];
-
-const RIGHT_TABS = [
-  { to: '/schedule', label: 'Schedule', icon: Calendar },
-  { to: '/profile', label: 'Profile', icon: UserRound },
-];
+import { useI18n } from '@/i18n/I18nProvider';
 
 export function BottomNav() {
   const { openCreate } = useHabitSheets();
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const leftTabs = [
+    { to: '/', label: t('nav.today'), icon: Sun },
+    { to: '/habits', label: t('nav.habits'), icon: ListChecks },
+  ];
+
+  const rightTabs = [
+    { to: '/schedule', label: t('nav.schedule'), icon: Calendar },
+    { to: '/profile', label: t('nav.profile'), icon: UserRound },
+  ];
 
   function handleCreate() {
     playTapSound();
@@ -32,7 +34,7 @@ export function BottomNav() {
       aria-label="Primary"
     >
       <div className="pointer-events-auto mx-4 mb-3 flex w-full max-w-md items-center gap-1 rounded-pill glass px-2 py-1.5 shadow-floating">
-        {LEFT_TABS.map((tab) => (
+        {leftTabs.map((tab) => (
           <NavItem key={tab.to} {...tab} />
         ))}
         <motion.button
@@ -41,11 +43,11 @@ export function BottomNav() {
           whileTap={{ scale: 0.9 }}
           transition={{ type: 'spring', stiffness: 400, damping: 22 }}
           className="mx-1 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-accent-contrast shadow-floating"
-          aria-label="Create habit"
+          aria-label={t('nav.createHabit')}
         >
           <Plus className="h-5 w-5" strokeWidth={2.5} />
         </motion.button>
-        {RIGHT_TABS.map((tab) => (
+        {rightTabs.map((tab) => (
           <NavItem key={tab.to} {...tab} />
         ))}
       </div>
