@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Sun, ListChecks, Calendar, UserRound, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useHabitSheets } from '@/hooks/useHabitSheets';
+import { playTapSound } from '@/lib/sound';
 
 const LEFT_TABS = [
   { to: '/', label: 'Today', icon: Sun },
@@ -19,6 +20,7 @@ export function BottomNav() {
   const navigate = useNavigate();
 
   function handleCreate() {
+    playTapSound();
     // Bring the user to the habits tab so the form sheet has a sensible context.
     navigate('/habits');
     openCreate();
@@ -62,6 +64,7 @@ function NavItem({ to, label, icon: Icon }: NavItemProps) {
     <NavLink
       to={to}
       end={to === '/'}
+      onClick={() => playTapSound()}
       className={({ isActive }) =>
         cn(
           'group relative flex flex-1 flex-col items-center gap-0.5 rounded-pill py-1.5 text-[10px] font-medium transition-colors',

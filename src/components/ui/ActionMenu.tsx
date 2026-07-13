@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { playTapSound } from '@/lib/sound';
 
 export interface ActionMenuItem {
   label: string;
@@ -36,7 +37,10 @@ export function ActionMenu({ trigger, items, align = 'right' }: ActionMenuProps)
     <div ref={wrapperRef} className="relative inline-block">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          playTapSound();
+          setOpen((o) => !o);
+        }}
         aria-haspopup="menu"
         aria-expanded={open}
         className="inline-flex items-center justify-center rounded-full"
@@ -66,6 +70,7 @@ export function ActionMenu({ trigger, items, align = 'right' }: ActionMenuProps)
                       role="menuitem"
                       disabled={item.disabled}
                       onClick={() => {
+                        playTapSound();
                         item.onSelect();
                         setOpen(false);
                       }}

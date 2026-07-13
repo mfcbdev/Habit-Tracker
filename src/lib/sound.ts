@@ -53,3 +53,34 @@ export function playCompletionSound() {
     osc.stop(now + note.start + note.length + 0.01);
   }
 }
+
+let lastTapAt = 0;
+
+/**
+ * Ultra-short percussive tap for button/tab presses. Extremely quiet
+ * (peak 0.06 amplitude) and rate-limited to 40ms so rapid taps don't
+ * turn into a buzz. No-op when sound is disabled.
+ */
+export function playTapSound() {
+  if (!isSoundEnabled()) return;
+  const now = performance.now();
+  if (now - lastTapAt < 40) return;
+  lastTapAt = now;
+
+  const ctx = ensureContext();
+  if (!ctx) return;
+
+  const start = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  // A single crisp click centered around A5. Triangle wave has a bit more
+  // percussive bite than sine while staying warm.
+  osc.frequency.setValueAtTime(880, start);
+  gain.gain.setValueAtTime(0, start);
+  gain.gain.linearRampToValueAtTime(0.06, start + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.055);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(start);
+  osc.stop(start + 0.06);
+}

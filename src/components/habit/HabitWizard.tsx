@@ -5,6 +5,7 @@ import { ChevronLeft, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { mapSupabaseError } from '@/lib/errors';
 import { toMinutes, cn } from '@/lib/utils';
+import { playTapSound } from '@/lib/sound';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateHabit } from '@/hooks/useHabits';
 import { ColorPicker } from '@/components/ui/ColorPicker';
@@ -51,6 +52,7 @@ export function HabitWizard({ onDone }: HabitWizardProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function goTo(next: number) {
+    playTapSound();
     setDirection(next > step ? 1 : -1);
     setStep(next);
     setError(null);

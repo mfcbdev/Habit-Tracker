@@ -8,6 +8,7 @@ import { HabitForm } from '@/components/habit/HabitForm';
 import { useArchiveHabit, useDeleteHabit } from '@/hooks/useHabits';
 import { useHabitCompletions } from '@/hooks/useHabitCompletions';
 import { useToast } from '@/hooks/useToast';
+import { playTapSound } from '@/lib/sound';
 import type { Habit } from '@/types';
 
 interface HabitDetailSheetProps {
@@ -43,6 +44,7 @@ export function HabitDetailSheet({ habit, open, onClose }: HabitDetailSheetProps
   }
 
   function handleClose() {
+    playTapSound();
     setMode('view');
     onClose();
   }

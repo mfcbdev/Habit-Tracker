@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { getIcon } from '@/lib/icons';
 import { cn } from '@/lib/utils';
+import { playTapSound } from '@/lib/sound';
 import type { Habit } from '@/types';
 
 interface BubbleCardProps {
@@ -17,7 +18,10 @@ export function BubbleCard({ habit, count, size = 168, onClick, className }: Bub
   return (
     <motion.button
       type="button"
-      onClick={onClick}
+      onClick={() => {
+        playTapSound();
+        onClick?.();
+      }}
       whileTap={{ scale: 0.96 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
       className={cn('group flex flex-col items-center gap-2 outline-none', className)}

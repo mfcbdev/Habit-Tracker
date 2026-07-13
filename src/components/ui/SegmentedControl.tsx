@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
+import { playTapSound } from '@/lib/sound';
 
 interface SegmentedControlProps<T extends string> {
   options: { value: T; label: string }[];
@@ -36,7 +37,10 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="tab"
             aria-selected={isActive}
-            onClick={() => onChange(option.value)}
+            onClick={() => {
+              if (!isActive) playTapSound();
+              onChange(option.value);
+            }}
             className={cn(
               'relative z-10 rounded-pill px-4 font-medium transition-colors',
               size === 'sm' ? 'py-1' : 'py-1.5',
