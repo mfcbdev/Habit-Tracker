@@ -10,7 +10,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   if (!session) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/welcome" replace />;
   }
 
   return <>{children}</>;
